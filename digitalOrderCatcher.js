@@ -141,7 +141,7 @@ function monitorTicketCount() {
         } catch (error) {
             console.error('Error monitoring ticket count:', error);
         }
-    }, 1000); // Check every second (1000ms)
+    }, 500); // Check every second (500ms)
 }
 
 // Create the control button when the page loads
