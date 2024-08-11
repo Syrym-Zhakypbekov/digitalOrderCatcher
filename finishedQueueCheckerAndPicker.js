@@ -2,6 +2,7 @@ let servedTickets = [];
 let autoClickEnabled = true;
 let isPaused = false;
 
+
 // Function to safely query the DOM and parse integers
 function queryInt(selector, regex = null) {
     try {
@@ -77,9 +78,23 @@ function updateStatusMessage(status, ticketNumber = null) {
         statusContainer.innerHTML = `<strong>Status:</strong> <span id="status-message"></span>`;
         document.body.appendChild(statusContainer);
     }
+
     const message = `${status}${ticketNumber !== null ? ` Currently serving ticket number: ${ticketNumber}` : ''}`;
-    document.getElementById('status-message').textContent = message;
+    const statusMessageElement = document.getElementById('status-message');
+    statusMessageElement.textContent = message;
+
+    // Change background color based on status
+    if (status.includes('Currently serving a client')) {
+        statusContainer.style.backgroundColor = 'yellow'; // Set background to yellow when serving a client
+        statusContainer.style.color = 'black';
+    } else if (status.includes('No Clients in queue')) {
+        statusContainer.style.backgroundColor = 'green'; // Set background to green when no clients are in the queue
+        statusContainer.style.color = 'white';
+    } else {
+        statusContainer.style.backgroundColor = '#f9f9f9'; // Default color
+    }
 }
+
 
 // Create the control button for stopping and resuming the auto-click
 function createControlButton() {
@@ -91,11 +106,19 @@ function createControlButton() {
         isPaused = false;
         autoClickEnabled = true;
         controlButton.disabled = true;
+        const currentManagerCount = fetchManagerTicketCount();
+
+        if (currentManagerCount === 0) {
+            updateStatusMessage('No Clients in queue, currently searching for new clients in queue');
+        } else {
+            updateStatusMessage('Searching for new clients...');
+        }
+
         console.log('Resuming automatic clicking for next client.');
-        updateStatusMessage('Searching for new clients...');
     });
     document.body.appendChild(controlButton);
 }
+
 
 // Update the "Next Ticket" button text and color
 function updateNextTicketButton() {
@@ -138,7 +161,13 @@ function monitorTicketCount() {
         // Check if the displayed ticket number matches the actual current ticket number
         const statusMessageElement = document.getElementById('status-message');
         const displayedTicketNumber = parseInt(statusMessageElement.textContent.match(/Currently serving ticket number: (\d+)/)?.[1], 10);
-        
+
+        // Ensure the status message is only updated when needed
+        if (currentManagerCount === 0 && autoClickEnabled) {
+            updateStatusMessage('No Clients in queue, currently searching for new clients in queue');
+            return; // Stop further updates until the queue changes
+        }
+
         if (currentTicketNumber !== displayedTicketNumber) {
             updateStatusMessage('Currently serving a client. Press the green button when done.', currentTicketNumber);
         }
